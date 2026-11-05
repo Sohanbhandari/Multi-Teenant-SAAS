@@ -1,0 +1,72 @@
+# =============================================================================
+# Multi-Tenant LMS SaaS — Local Development Services
+# =============================================================================
+# Starts infrastructure services needed for local development.
+# Application code (FastAPI + Next.js) runs OUTSIDE Docker — see README.md.
+#
+# Usage:
+#   docker-compose up -d          # Start services in background
+#   docker-compose down           # Stop services (data preserved in volumes)
+#   docker-compose down -v        # Stop AND delete volumes (wipes all local data)
+#   docker-compose logs -f        # Follow all service logs
+#   docker-compose logs postgres  # Follow a specific service
+#
+# Services:
+#   postgres  — PostgreSQL 15 (primary database)  → localhost:5432
+#   redis     — Redis 7 (token blocklist + cache)  → localhost:6379
+# =============================================================================
+
+version: "3.9"
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 15
+  # Connection string: postgresql+asyncpg://postgres:postgres@localhost:5432/lms_dev
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: lms_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: lms_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d lms_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # Redis 7
+  # Connection string: redis://localhost:6379/0
+  # Persistence: AOF enabled so data survives container restarts.
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: lms_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  postgres_data:
+    name: lms_postgres_data
+  redis_data:
+    name: lms_redis_data
+
