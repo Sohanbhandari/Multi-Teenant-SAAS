@@ -1,0 +1,80 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "lms-backend"
+version = "0.1.0"
+description = "Multi-Tenant Learning & Coaching Management SaaS — Backend API"
+requires-python = ">=3.11"
+readme = "README.md"
+
+# =============================================================================
+# Tool configurations
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Ruff — fast Python linter (replaces flake8 + isort)
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+# E = pycodestyle errors
+# F = pyflakes (undefined names, unused imports)
+# I = isort (import ordering)
+# N = pep8-naming conventions
+# W = pycodestyle warnings
+# UP = pyupgrade (modernize Python syntax)
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = [
+    "E501",  # Line too long — handled by formatter
+    "N805",  # first argument of a method should be named 'self' — conflicts with Pydantic validators
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+# ---------------------------------------------------------------------------
+# Mypy — static type checker
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+warn_unused_configs = true
+no_implicit_optional = true
+# Start with relaxed settings; tighten progressively as codebase matures.
+# Full strict mode target for Phase 8:
+# strict = true
+
+[[tool.mypy.overrides]]
+module = ["passlib.*", "jose.*", "supabase.*", "redis.*", "asyncpg.*"]
+ignore_missing_imports = true
+
+# ---------------------------------------------------------------------------
+# Pytest
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+# asyncio_mode = "auto" means every async def test/fixture is automatically
+# treated as an asyncio coroutine — no need for @pytest.mark.asyncio decorator.
+asyncio_mode = "auto"
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+# ---------------------------------------------------------------------------
+# Coverage
+# ---------------------------------------------------------------------------
+[tool.coverage.run]
+source = ["app"]
+omit = ["tests/*", "alembic/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+# Increase this threshold as more code is added:
+fail_under = 0
+
